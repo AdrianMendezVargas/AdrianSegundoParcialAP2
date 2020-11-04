@@ -1,0 +1,211 @@
+﻿@page "/registro-cobros"
+
+@inject IToastService toast
+
+<div class="container">
+    <div class="card shadow-lg">
+        <div class="card-header bg-info">
+            <h3>Registro cobros</h3>
+        </div>
+        <div class="card-body">
+            <EditForm id="form" Model="cobro" OnValidSubmit="Guardar">
+
+                <div class="form-group row">
+                    <label class="col-2 col-form-label">Cobro id:</label>
+                    <div >
+                        <InputNumber class="form-control" @bind-Value="cobro.CobroId"/>
+                    </div>
+                    <label class="col-2 col-form-label">Cliente</label>
+                    <div class="col form-inline">
+                        <select class="custom-select form-control" @bind="ClienteIndex">
+                            <option value="0">Seleccionar</option>
+                            @if (Clientes != null) {
+                                @foreach (var cliente in Clientes) {
+                                    <option value="@cliente.ClienteId">@cliente.Nombres</option>
+                                }
+                            }
+                        </select>
+                        @if (ClienteIndex != _ClienteIndex) {
+                            ClienteChanged();
+                        }
+                    </div>
+                </div>
+
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Fecha</th>
+                            <th>Monto</th>
+                            <th>Balance</th>
+                            <th>Cobrado</th>
+                            <th>Pagar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0 ; i < VentasPendientes.Count ; i++) {
+                            Venta venta = VentasPendientes[i];
+                            <tr>
+                                <td>@venta.VentaId</td>
+                                <td>@venta.Fecha</td>
+                                <td>@venta.Monto</td>
+                                <td>@venta.Balance</td>
+                                <td>@ObtenerMontoCobro(venta)</td>
+                                <td><input type="checkbox" disabled="@(!venta.Pendiente)" checked="@(EstaSelecionada(venta))" @onclick="()=> PagarClick(venta)" /></td>
+                            </tr>
+
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Totales</td>
+                            <td><input readonly value="@cobro.Detalles.Where(c => c.CobroDetalleId == 0).Count()" /></td>
+                            <td></td>
+                            <td></td>
+                            <td><input readonly value="@cobro.ObtenerMonto()"/></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="mt-3">
+                    <label>Observaciones</label><br />
+                    <InputTextArea style="width:100%" @bind-Value="cobro.Observaciones"></InputTextArea>
+                </div>
+                
+
+                <DataAnnotationsValidator />
+            </EditForm>
+        </div>
+        <div class="card-footer text-center">
+            <button class="btn btn-outline-dark" @onclick="Nuevo">Nuevo</button>
+            <input type="submit" form="form" class="btn btn-outline-success" value="Guardar" />
+            <button class="btn btn-outline-danger" @onclick="Eliminar">Eliminar</button>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    Cobro cobro = new Cobro();
+
+    public List<Cliente> Clientes { get; set; }
+    Cliente ClienteSeleccionado = new Cliente();
+
+    int ClienteIndex = 0;
+    int _ClienteIndex = 0;
+
+    public List<Venta> Ventas { get; set; } = new List<Venta>();
+    public List<Venta> VentasPendientes { get; set; } = new List<Venta>();
+
+    protected override async Task OnInitializedAsync() {
+        Clientes = await ClientesBLL.GetClientes();
+        Ventas = await VentasBLL.GetVentas();
+    }
+
+    void PagarClick(Venta venta) {
+        if (venta.Pendiente) {
+            CobroDetalle cobroDetalle = new CobroDetalle();
+            cobroDetalle.VentaId = venta.VentaId;
+            cobroDetalle.Monto = venta.Balance;
+
+            if (cobro.Detalles.Exists(c => c.VentaId == venta.VentaId)) {
+                cobro.Detalles.Remove(cobro.Detalles.Find(c => c.VentaId == venta.VentaId));
+            } else {
+                cobro.Detalles.Add(cobroDetalle);
+            }
+        } else {
+            toast.ShowInfo("Esta factura esta pagada");
+        }
+
+    }
+
+    bool EstaSelecionada(Venta venta) {
+        if (cobro.Detalles.Exists(c => c.VentaId == venta.VentaId)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    decimal ObtenerMontoCobro(Venta venta) {
+        decimal monto = 0;
+        if (cobro.Detalles.Exists(c => c.VentaId == venta.VentaId)) {
+            monto = venta.Balance;
+        } else {
+            monto = 0;
+        }
+        return monto;
+    }
+
+    void ClienteChanged() {
+        Nuevo();
+
+        if (ClienteIndex > 0) {
+            ClienteSeleccionado = Clientes.Where(c => c.ClienteId == ClienteIndex).FirstOrDefault();
+            VentasPendientes = Ventas.Where(v => v.ClienteId == ClienteSeleccionado.ClienteId).ToList();
+        } else {
+            VentasPendientes = new List<Venta>();
+        }
+
+
+        _ClienteIndex = ClienteIndex;
+    }
+
+    void Nuevo() {
+        cobro = new Cobro();
+    }
+
+    async Task ActualizarDatosDetalle() {
+        Ventas = await VentasBLL.GetVentas();
+        ClienteChanged();
+    }
+
+    async Task Guardar() {
+
+        bool guardo = await CobrosBLL.Guardar(cobro);
+
+        if (guardo) {
+            toast.ShowSuccess("Guardado ");
+
+            await ActualizarDatosDetalle();
+            Nuevo();
+        } else
+            toast.ShowError("Error al guardar");
+    }
+
+    async Task Eliminar() {
+
+        if (await Existe()) {
+
+            bool eliminado = await CobrosBLL.Eliminar(cobro.CobroId);
+
+            if (eliminado) {
+                toast.ShowSuccess("Eliminado");
+                Nuevo();
+            } else
+                toast.ShowError("Error al eliminar");
+
+        } else {
+            toast.ShowWarning("Este cobro no existe");
+        }
+
+    }
+
+    async Task Buscar() {
+
+        var cobroBuscado = await CobrosBLL.Buscar(cobro.CobroId);
+
+        if (cobroBuscado != null) {
+            cobro = cobroBuscado;
+        } else {
+            toast.ShowWarning("No encontrado");
+            Nuevo();
+        }
+    }
+
+    async Task<bool> Existe() {
+        var cobroBuscado = await CobrosBLL.Buscar(cobro.CobroId);
+        return cobroBuscado != null;
+    }
+
+
+}
