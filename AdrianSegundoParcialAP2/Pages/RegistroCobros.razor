@@ -161,6 +161,7 @@
 
     async Task Guardar() {
         if (cobro.Detalles.Count > 0) {
+            cobro.ClienteId = ClienteSeleccionado.ClienteId;
             bool guardo = await CobrosBLL.Guardar(cobro);
 
             if (guardo) {
