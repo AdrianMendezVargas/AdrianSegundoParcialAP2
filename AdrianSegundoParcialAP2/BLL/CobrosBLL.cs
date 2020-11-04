@@ -16,7 +16,7 @@ namespace AdrianSegundoParcialAP2.BLL {
         public async static Task<bool> Insertar(Cobro cobro) {
             bool paso = false;
             Contexto contexto = new Contexto();
-
+            cobro.CobroId = 0;
             try {
                 contexto.Cobros.Add(cobro);
                 paso = await contexto.SaveChangesAsync() > 0;
@@ -66,7 +66,7 @@ namespace AdrianSegundoParcialAP2.BLL {
             bool paso = false;
             Contexto contexto = new Contexto();
             try {
-                var cobro = contexto.Cobros.Find(id);
+                var cobro = await Buscar(id);
 
                 if (cobro != null) {
                     contexto.Cobros.Remove(cobro);
@@ -77,6 +77,7 @@ namespace AdrianSegundoParcialAP2.BLL {
                             var venta = await VentasBLL.Buscar(cobroDetalle.VentaId);
                             if (venta != null) {
                                 venta.Balance += cobroDetalle.Monto;
+                                await VentasBLL.Modificar(venta);
                             }
                         }
                     }
@@ -96,6 +97,7 @@ namespace AdrianSegundoParcialAP2.BLL {
 
             try {
                 cobro = await contexto.Cobros
+                    .Include(c => c.Detalles)
                     .Where(v => v.CobroId == id)
                     .FirstOrDefaultAsync();
             } catch (Exception) {

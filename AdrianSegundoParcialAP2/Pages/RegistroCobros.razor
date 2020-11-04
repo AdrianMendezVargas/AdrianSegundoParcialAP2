@@ -160,16 +160,19 @@
     }
 
     async Task Guardar() {
+        if (cobro.Detalles.Count > 0) {
+            bool guardo = await CobrosBLL.Guardar(cobro);
 
-        bool guardo = await CobrosBLL.Guardar(cobro);
+            if (guardo) {
+                toast.ShowSuccess("Guardado ");
 
-        if (guardo) {
-            toast.ShowSuccess("Guardado ");
+                await ActualizarDatosDetalle();
+            } else
+                toast.ShowError("Error al guardar");
+        } else {
+            toast.ShowWarning("Debe agregar cobros");
+        }
 
-            await ActualizarDatosDetalle();
-            Nuevo();
-        } else
-            toast.ShowError("Error al guardar");
     }
 
     async Task Eliminar() {
@@ -180,6 +183,8 @@
 
             if (eliminado) {
                 toast.ShowSuccess("Eliminado");
+
+                await ActualizarDatosDetalle();
                 Nuevo();
             } else
                 toast.ShowError("Error al eliminar");
