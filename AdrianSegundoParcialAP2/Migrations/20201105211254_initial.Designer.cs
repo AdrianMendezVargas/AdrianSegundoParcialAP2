@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AdrianSegundoParcialAP2.Migrations
 {
     [DbContext(typeof(Contexto))]
-    [Migration("20201105191632_Initial")]
-    partial class Initial
+    [Migration("20201105211254_initial")]
+    partial class initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
