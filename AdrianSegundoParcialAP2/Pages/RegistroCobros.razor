@@ -81,7 +81,6 @@
         <div class="card-footer text-center">
             <button class="btn btn-outline-dark" @onclick="Nuevo">Nuevo</button>
             <input type="submit" form="form" class="btn btn-outline-success" value="Guardar" />
-            <button class="btn btn-outline-danger" @onclick="Eliminar">Eliminar</button>
         </div>
     </div>
 </div>
@@ -175,26 +174,6 @@
                 toast.ShowError("Error al guardar");
         } else {
             toast.ShowWarning("Debe agregar cobros");
-        }
-
-    }
-
-    async Task Eliminar() {
-
-        if (await Existe()) {
-
-            bool eliminado = await CobrosBLL.Eliminar(cobro.CobroId);
-
-            if (eliminado) {
-                toast.ShowSuccess("Eliminado");
-
-                await ActualizarDatosDetalle();
-                Nuevo();
-            } else
-                toast.ShowError("Error al eliminar");
-
-        } else {
-            toast.ShowWarning("Este cobro no existe");
         }
 
     }
