@@ -125,14 +125,14 @@ namespace AdrianSegundoParcialAP2.BLL {
             return encontrado;
         }
 
-        public async static Task<List<Cobro>> GetCobros(int clienteId = 0) {
+        public async static Task<List<Cobro>> GetCobros() {
             Contexto contexto = new Contexto();
 
             List<Cobro> cobros = new List<Cobro>();
             await Task.Delay(01); //Para dar tiempo a renderizar el mensaje de carga
 
             try {
-                cobros = await contexto.Cobros.ToListAsync();
+                cobros = await contexto.Cobros.Include(c => c.Detalles).ToListAsync();
             } catch (Exception) {
 
                 throw;

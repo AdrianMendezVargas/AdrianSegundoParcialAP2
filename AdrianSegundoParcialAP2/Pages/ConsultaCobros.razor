@@ -1,0 +1,178 @@
+﻿@page "/consulta-cobros"
+@inject IToastService toast
+
+<div class="container mt-3">
+    <div class="card shadow-lg">
+        <div class="card-header bg-info">
+            <div class="form-row">
+                <div class="col-sm flex-shrink-1">
+                    <h3><i class="oi oi-dollar mr-3" />Cobros</h3>
+                </div>
+                <div class="col-sm">
+                    <a class="btn btn-dark border-light" href="registro-cobros">
+                        <i class="oi oi-plus" />
+                        Agregar
+                    </a>
+                </div>
+                <div class="col-sm">
+                    <select @bind="indexSelect" class="custom-select">
+                        <option value="0">Filtrar por</option>
+                        <option value="1">CobroId</option>
+                        <option value="2">ClienteId</option>
+                        <option value="3">Nombre cliente</option>
+                    </select>
+                </div>
+                <div class="col-sm">
+                    <datalist id="clientes-list">
+                        @if (Clientes != null) {
+                            @foreach (var cliente in Clientes) {
+                                <option value="@cliente.Nombres"></option>
+                            }
+                        }
+                    </datalist>
+                    <input class="form-control w-100" list="@(indexSelect == 3 ? "clientes-list" : "")" type="@(indexSelect == 3 ? "text" : "number")" @bind="criterioDeBusqueda" />
+                </div>
+                <div class="col-sm text-center">
+                    <button class="btn btn-dark border-light" @onclick="FiltarCobros">
+                        <i class="oi oi-magnifying-glass" />
+                        Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body overflow-auto">
+            @if (Cobros == null || CobrosFiltrados == null) {
+                <div>
+                    <h4>Cargando...</h4>
+                </div>
+            } else {
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Cobro Id</th>
+                            <th>Cliente Id</th>
+                            <th>Fecha</th>
+                            <th>Monto</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cobro in CobrosFiltrados) {
+                            <tr>
+                                <td>@cobro.CobroId</td>
+                                <td>@cobro.ClienteId</td>
+                                <td>@cobro.Fecha.ToShortDateString()</td>
+                                <td>@string.Format("{0:c}" , cobro.ObtenerMonto())</td>
+                                <td><button @onclick="()=>VerCobro(cobro)" class="btn btn-outline-dark">Ver</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@if (MostraDialogo) {
+    DialogTitle = "Cobro";
+
+    <Dialogo Title="@DialogTitle" OnClose="OcultarDialogo">
+        <Body>
+            <FieldsCobro cobro="cobroSeleccionado" />
+        </Body>
+        <Footer>
+            <button class="btn btn-outline-danger" @onclick="Eliminar">Eliminar</button>
+        </Footer>
+    </Dialogo>
+}
+
+
+
+@code {
+
+    bool MostraDialogo = false;
+    string DialogTitle;
+
+    int indexSelect = 0; //indice actual del select
+    string criterioDeBusqueda;
+
+    Cobro cobroSeleccionado = new Cobro();
+
+    public List<Cobro> Cobros { get; set; } = new List<Cobro>();
+    public List<Cobro> CobrosFiltrados { get; set; }
+
+    public List<Cliente> Clientes { get; set; } = new List<Cliente>();
+
+    protected async override Task OnInitializedAsync() {
+        Cobros = await CobrosBLL.GetCobros();
+        CobrosFiltrados = Cobros;
+        Clientes = await ClientesBLL.GetClientes();
+    }
+
+    void VerCobro(Cobro cobro) {
+        cobroSeleccionado = cobro;
+        MostraDialogo = true;
+    }
+
+    async Task OcultarDialogo() {
+        MostraDialogo = false;
+        Cobros = await CobrosBLL.GetCobros();
+        await QuitarFiltros();
+    }
+
+    async Task QuitarFiltros() {
+        indexSelect = 0;
+        criterioDeBusqueda = "";
+        await FiltarCobros();
+    }
+
+
+    async Task Eliminar() {
+        bool eliminado;
+
+        eliminado = await CobrosBLL.Eliminar(cobroSeleccionado.CobroId);
+
+        if (eliminado) {
+            toast.ShowSuccess("Eliminado");
+            await OcultarDialogo();
+        } else
+            toast.ShowError("Error al eliminar");
+    }
+
+    async Task FiltarCobros() {
+
+        if (indexSelect == 0) {//Todos
+
+            CobrosFiltrados = Cobros.Where(c => true).ToList();
+
+        } else if (indexSelect == 1) {//CobroId
+
+            if (int.TryParse(criterioDeBusqueda , out int Id)) {
+
+                CobrosFiltrados = Cobros.Where(c => c.CobroId == Id).ToList();
+            }
+
+        } else if (indexSelect == 2) {//ClienteId
+
+            if (int.TryParse(criterioDeBusqueda , out int Id)) {
+                CobrosFiltrados = Cobros.Where(c => c.ClienteId == Id).ToList();
+            }
+
+        } else if (indexSelect == 3) {//Nombre cliente
+            CobrosFiltrados.Clear();
+
+            var clientes = Clientes.Where(c => c.Nombres.ToLower().Contains(criterioDeBusqueda?.ToLower())).ToList();
+            foreach (var cliente in clientes) {
+                var cobros = (await CobrosBLL.GetCobros()).Where(c => c.ClienteId == cliente.ClienteId).ToList();
+                if (cobros != null) {
+                    CobrosFiltrados.AddRange(cobros);
+                }
+            }
+
+        }
+
+    }
+
+
+
+}

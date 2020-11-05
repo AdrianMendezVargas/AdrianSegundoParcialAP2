@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AdrianSegundoParcialAP2.Migrations
 {
     [DbContext(typeof(Contexto))]
-    [Migration("20201104215453_initial")]
-    partial class initial
+    [Migration("20201105191632_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -59,6 +59,9 @@ namespace AdrianSegundoParcialAP2.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("Fecha")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Monto")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Observaciones")

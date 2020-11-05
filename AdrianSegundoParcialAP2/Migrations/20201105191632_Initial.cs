@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace AdrianSegundoParcialAP2.Migrations
 {
-    public partial class initial : Migration
+    public partial class Initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -28,7 +28,8 @@ namespace AdrianSegundoParcialAP2.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     ClienteId = table.Column<int>(nullable: false),
                     Fecha = table.Column<DateTime>(nullable: false),
-                    Observaciones = table.Column<string>(nullable: true)
+                    Observaciones = table.Column<string>(nullable: true),
+                    Monto = table.Column<decimal>(nullable: false)
                 },
                 constraints: table =>
                 {

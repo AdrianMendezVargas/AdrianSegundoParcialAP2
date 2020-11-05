@@ -102,7 +102,7 @@ namespace AdrianSegundoParcialAP2.BLL {
             return encontrado;
         }
 
-        public async static Task<List<Cliente>> GetClientes(int clienteId = 0) {
+        public async static Task<List<Cliente>> GetClientes() {
             Contexto contexto = new Contexto();
 
             List<Cliente> clientes = new List<Cliente>();

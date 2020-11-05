@@ -59,6 +59,9 @@ namespace AdrianSegundoParcialAP2.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("Monto")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Observaciones")
                         .HasColumnType("TEXT");
 

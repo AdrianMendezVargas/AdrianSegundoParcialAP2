@@ -5,7 +5,7 @@
 <div class="container">
     <div class="card shadow-lg">
         <div class="card-header bg-info">
-            <h3>Registro cobros</h3>
+            <h2>Registro cobros</h2>
         </div>
         <div class="card-body">
             <EditForm id="form" Model="cobro" OnValidSubmit="Guardar">
@@ -30,42 +30,45 @@
                         }
                     </div>
                 </div>
-
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Id</th>
-                            <th>Fecha</th>
-                            <th>Monto</th>
-                            <th>Balance</th>
-                            <th>Cobrado</th>
-                            <th>Pagar</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (int i = 0 ; i < VentasPendientes.Count ; i++) {
-                            Venta venta = VentasPendientes[i];
+                <div class="overflow-auto">
+                    <h5>Facturas pendientes</h5>
+                    <table class="table table-hover">
+                        <thead class="thead-light">
                             <tr>
-                                <td>@venta.VentaId</td>
-                                <td>@venta.Fecha</td>
-                                <td>@venta.Monto</td>
-                                <td>@venta.Balance</td>
-                                <td>@ObtenerMontoCobro(venta)</td>
-                                <td><input type="checkbox" disabled="@(!venta.Pendiente)" checked="@(EstaSelecionada(venta))" @onclick="()=> PagarClick(venta)" /></td>
+                                <th>Id</th>
+                                <th>Fecha</th>
+                                <th>Monto</th>
+                                <th>Balance</th>
+                                <th>Cobrado</th>
+                                <th>Pagar</th>
                             </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0 ; i < VentasPendientes.Count ; i++) {
+                                Venta venta = VentasPendientes[i];
+                                <tr>
+                                    <td>@venta.VentaId</td>
+                                    <td>@venta.Fecha</td>
+                                    <td>@venta.Monto</td>
+                                    <td>@venta.Balance</td>
+                                    <td>@ObtenerMontoCobro(venta)</td>
+                                    <td><input type="checkbox" disabled="@(!venta.Pendiente)" checked="@(EstaSelecionada(venta))" @onclick="()=> PagarClick(venta)" /></td>
+                                </tr>
 
-                        }
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td>Totales</td>
-                            <td><input readonly value="@cobro.Detalles.Where(c => c.CobroDetalleId == 0).Count()" /></td>
-                            <td></td>
-                            <td></td>
-                            <td><input readonly value="@cobro.ObtenerMonto()"/></td>
-                        </tr>
-                    </tfoot>
-                </table>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td>Totales</td>
+                                <td><input readonly value="@cobro.Detalles.Where(c => c.CobroDetalleId == 0).Count()" /></td>
+                                <td></td>
+                                <td></td>
+                                <td><input readonly value="@cobro.ObtenerMonto()" /></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
                 <div class="mt-3">
                     <label>Observaciones</label><br />
                     <InputTextArea style="width:100%" @bind-Value="cobro.Observaciones"></InputTextArea>
@@ -141,7 +144,7 @@
 
         if (ClienteIndex > 0) {
             ClienteSeleccionado = Clientes.Where(c => c.ClienteId == ClienteIndex).FirstOrDefault();
-            VentasPendientes = Ventas.Where(v => v.ClienteId == ClienteSeleccionado.ClienteId).ToList();
+            VentasPendientes = Ventas.Where(v => v.ClienteId == ClienteSeleccionado.ClienteId && v.Pendiente).ToList();
         } else {
             VentasPendientes = new List<Venta>();
         }

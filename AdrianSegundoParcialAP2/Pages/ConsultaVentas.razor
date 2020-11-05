@@ -1,0 +1,120 @@
+﻿@page "/consulta-ventas"
+
+<div class="container">
+    <div class="card shadow-lg">
+        <div class="card-header bg-info">
+            <div class="form-row mb-3 mt-3">
+                <div class="col-sm-4">
+                    <h3>Consulta Ventas</h3>
+                </div>
+                <div class="col-sm-3">
+                    <select @bind="indexSelect" class="custom-select">
+                        <option value="0">Filtrar por</option>
+                        <option value="1">VentaId</option>
+                        <option value="2">ClienteId</option>
+                        <option value="3">Nombre Cliente</option>
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <datalist id="clientes-list">
+                        @if (Clientes != null) {
+                            @foreach (var cliente in Clientes) {
+                                <option value="@cliente.Nombres"></option>
+                            }
+                        }
+                    </datalist>
+                    <input class="form-control w-100" list="@(indexSelect == 3 ? "clientes-list" : "")" type="@(indexSelect == 3 ? "text" : "number")" @bind="criterioDeBusqueda" />
+                </div>
+                <div class="col-sm-2">
+                    <button class="btn btn-dark border-light" @onclick="FiltrarVentas">
+                        <i class="oi oi-magnifying-glass" />
+                        Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (Ventas == null || VentasFiltradas == null) {
+                <div>
+                    <h4>Cargando...</h4>
+                </div>
+            } else {
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>VentaId</th>
+                            <th>ClienteId</th>
+                            <th>Fecha</th>
+                            <th>Monto</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var venta in VentasFiltradas) {
+                            <tr>
+                                <td>@venta.VentaId</td>
+                                <td>@venta.ClienteId</td>
+                                <td>@venta.Fecha.ToShortDateString()</td>
+                                <td>@string.Format("{0:c}" , venta.Monto)</td>
+                                <td>@string.Format("{0:c}" , venta.Balance)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    int indexSelect = 0; //indice del select
+    string criterioDeBusqueda;
+
+    public List<Venta> Ventas { get; set; }
+    public List<Venta> VentasFiltradas { get; set; }
+
+    public List<Cliente> Clientes { get; set; }
+
+    protected async override Task OnInitializedAsync() {
+        Ventas = await VentasBLL.GetVentas();
+        VentasFiltradas = Ventas;
+        Clientes = await ClientesBLL.GetClientes();
+    }
+
+    async void FiltrarVentas() {
+
+        if (indexSelect == 0) {//Todos
+
+            VentasFiltradas = Ventas.Where(c => true).ToList();
+
+        } else if (indexSelect == 1) {//VentaId
+
+            if (int.TryParse(criterioDeBusqueda , out int Id)) {
+
+                VentasFiltradas = Ventas.Where(v => v.VentaId == Id).ToList();
+            }
+
+        } else if (indexSelect == 2) {//ClienteId
+
+            if (int.TryParse(criterioDeBusqueda , out int Id)) {
+                VentasFiltradas = Ventas.Where(v => v.ClienteId == Id).ToList();
+            }
+
+        } else if (indexSelect == 3) {//Nombre cliente
+            VentasFiltradas.Clear();
+
+            var clientes = Clientes.Where(c => c.Nombres.ToLower().Contains(criterioDeBusqueda.ToLower())).ToList();
+            foreach (var cliente in clientes) {
+                var ventas = (await VentasBLL.GetVentas()).Where(v => v.ClienteId == cliente.ClienteId).ToList();
+                if (ventas != null) {
+                    VentasFiltradas.AddRange(ventas);
+                }
+            }
+            StateHasChanged();
+        }
+
+    }
+
+}
